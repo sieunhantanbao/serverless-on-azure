@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "serverless_on_azure": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7185",
+      "launchBrowser": false
+    }
+  }
+}
