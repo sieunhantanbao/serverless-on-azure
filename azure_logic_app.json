@@ -1,0 +1,114 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Condition": {
+                "actions": {
+                    "Compose_Email_Body": {
+                        "inputs": "@{join(body('Get_documents')?['value'],'<br/>')}",
+                        "type": "Compose"
+                    },
+                    "Send Email": {
+                        "inputs": {
+                            "body": {
+                                "Body": "<p><b><strong style=\"font-size: 20px;\">Low Stock Alert!</strong></b> </p><br><p>The following items have low stock:</p><p>@{outputs('Compose_Email_Body')}</p>",
+                                "Importance": "Normal",
+                                "Subject": "SD2411 - Test Azure Logic App",
+                                "To": "nguyensieuanh@gmail.com,sieunhantanbao@gmail.com"
+                            },
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['outlook']['connectionId']"
+                                }
+                            },
+                            "method": "post",
+                            "path": "/v2/Mail"
+                        },
+                        "runAfter": {
+                            "Compose_Email_Body": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "ApiConnection"
+                    }
+                },
+                "else": {
+                    "actions": {}
+                },
+                "expression": {
+                    "and": [
+                        {
+                            "greater": [
+                                {
+                                    "length": [
+                                        "@body('Get_documents')?['value']"
+                                    ]
+                                },
+                                0
+                            ]
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Get_documents": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "If"
+            },
+            "Get_documents": {
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['documentdb']['connectionId']"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v5/cosmosdb/@{encodeURIComponent('AccountNameFromSettings')}/dbs/@{encodeURIComponent('ProductDB')}/colls/@{encodeURIComponent('Products')}/query",
+                    "queries": {
+                        "queryText": "SELECT c.productName as productName, c.quantity as quantity FROM c WHERE c.quantity < 5"
+                    }
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "Recurrence": {
+                "evaluatedRecurrence": {
+                    "frequency": "Month",
+                    "interval": 1
+                },
+                "recurrence": {
+                    "frequency": "Month",
+                    "interval": 1
+                },
+                "type": "Recurrence"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "documentdb": {
+                    "connectionId": "/subscriptions/e93e5c31-00d6-492c-8751-1626d0a880fe/resourceGroups/serverless_on_azure_rg/providers/Microsoft.Web/connections/documentdb",
+                    "connectionName": "documentdb",
+                    "id": "/subscriptions/e93e5c31-00d6-492c-8751-1626d0a880fe/providers/Microsoft.Web/locations/japaneast/managedApis/documentdb"
+                },
+                "outlook": {
+                    "connectionId": "/subscriptions/e93e5c31-00d6-492c-8751-1626d0a880fe/resourceGroups/serverless_on_azure_rg/providers/Microsoft.Web/connections/outlook",
+                    "connectionName": "outlook",
+                    "id": "/subscriptions/e93e5c31-00d6-492c-8751-1626d0a880fe/providers/Microsoft.Web/locations/japaneast/managedApis/outlook"
+                }
+            }
+        }
+    }
+}
